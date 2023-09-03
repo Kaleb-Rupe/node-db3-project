@@ -33,7 +33,7 @@ async function findById(scheme_id) {
   const rows = await db("schemes as sc")
     .leftJoin("steps as st", "sc.scheme_id", "st.scheme_id")
     .where("sc.scheme_id", scheme_id)
-    .select("sc.scheme_name", "st.*")
+    .select("sc.scheme_name", "st.*", "sc.scheme_id")
     .orderBy("st.step_number");
 
   const result = {
@@ -44,7 +44,11 @@ async function findById(scheme_id) {
 
   rows.forEach((row) => {
     if (row.step_id) {
-      result.steps.push(row);
+      result.steps.push({
+        step_id: row.step_id,
+        step_number: row.step_number,
+        instructions: row.instructions,
+      });
     }
   });
 
@@ -120,14 +124,10 @@ async function findById(scheme_id) {
 async function findSteps(scheme_id) {
   // EXERCISE C
   const rows = await db("schemes as sc")
-    .leftJoin("steps as st", "sc.scheme_id", "=", "st.scheme_id")
+    .leftJoin("steps as st", "sc.scheme_id", "st.scheme_id")
+    .select("sc.scheme_name", "st.step_id", "st.step_number", "instructions")
     .where("sc.scheme_id", scheme_id)
-    .select(
-      "sc.scheme_name",
-      "st.step_id",
-      "st.step_number",
-      "st.instructions"
-    );
+    .orderBy("step_number");
 
   if (!rows[0].step_id) return [];
 
