@@ -1,4 +1,15 @@
-function find() { // EXERCISE A
+const db = require("../../data/db-config.js");
+
+async function find() {
+  // EXERCISE A
+  const rows = await db("schemes as sc")
+    .leftJoin("steps as st", "sc.scheme_id", "=", "st.scheme_id")
+    .count("st.step_id as number_of_steps")
+    .groupBy("sc.scheme_id")
+    .orderBy("sc.scheme_id", "ASC")
+    .select("sc.*");
+
+  return rows;
   /*
     1A- Study the SQL query below running it in SQLite Studio against `data/schemes.db3`.
     What happens if we change from a LEFT join to an INNER join?
@@ -17,8 +28,30 @@ function find() { // EXERCISE A
   */
 }
 
-function findById(scheme_id) { // EXERCISE B
-  /*
+async function findById(scheme_id) {
+  // EXERCISE B
+  const rows = await db("schemes as sc")
+    .leftJoin("steps as st", "sc.scheme_id", "st.scheme_id")
+    .where("sc.scheme_id", scheme_id)
+    .select("sc.scheme_name", "st.*")
+    .orderBy("st.step_number");
+
+  const result = {
+    scheme_id: rows[0].scheme_id,
+    scheme_name: rows[0].scheme_name,
+    steps: [],
+  };
+
+  rows.forEach((row) => {
+    if (row.step_id) {
+      result.steps.push(row);
+    }
+  });
+
+  return result;
+}
+
+/*
     1B- Study the SQL query below running it in SQLite Studio against `data/schemes.db3`:
 
       SELECT
@@ -83,13 +116,37 @@ function findById(scheme_id) { // EXERCISE B
         "steps": []
       }
   */
-}
 
-function findSteps(scheme_id) { // EXERCISE C
+async function findSteps(scheme_id) {
+  // EXERCISE C
+  const rows = await db("schemes as sc")
+    .leftJoin("steps as st", "sc.scheme_id", "=", "st.scheme_id")
+    .where("sc.scheme_id", scheme_id)
+    .select(
+      "sc.scheme_name",
+      "st.step_id",
+      "st.step_number",
+      "st.instructions"
+    );
+
+  if (!rows[0].step_id) return [];
+
+  return rows;
+
   /*
     1C- Build a query in Knex that returns the following data.
     The steps should be sorted by step_number, and the array
     should be empty if there are no steps for the scheme:
+
+    SELECT
+          sc.scheme_name,
+          st.step_id,
+          st.step_number,
+          st.instructions
+      FROM schemes as sc
+      LEFT JOIN steps as st
+          ON sc.scheme_id = st.scheme_id
+      WHERE sc.scheme_id = 1
 
       [
         {
@@ -108,13 +165,15 @@ function findSteps(scheme_id) { // EXERCISE C
   */
 }
 
-function add(scheme) { // EXERCISE D
+function add(scheme) {
+  // EXERCISE D
   /*
     1D- This function creates a new scheme and resolves to _the newly created scheme_.
   */
 }
 
-function addStep(scheme_id, step) { // EXERCISE E
+function addStep(scheme_id, step) {
+  // EXERCISE E
   /*
     1E- This function adds a step to the scheme with the given `scheme_id`
     and resolves to _all the steps_ belonging to the given `scheme_id`,
@@ -128,4 +187,4 @@ module.exports = {
   findSteps,
   add,
   addStep,
-}
+};
